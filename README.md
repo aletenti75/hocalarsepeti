@@ -4,7 +4,7 @@ https://next-airbnb-divyeshio.vercel.app/
 
 # Features:
 
-- Booking / Reservation system
+- Hocalar / Reservation system
 - Guest reservation cancellation
 - Owner reservation cancellation
 - Pricing calculation
