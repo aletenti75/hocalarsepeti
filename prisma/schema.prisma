@@ -1,5 +1,4 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// prisma/schema.prisma
 
 generator client {
   provider = "prisma-client-js"
@@ -10,64 +9,93 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ---------- MODELS ----------
+
+// Utente
 model User {
-  id             String        @id @default(auto()) @map("_id") @db.ObjectId
+  id             String         @id @default(uuid())
   name           String?
-  email          String?       @unique
+  email          String?        @unique
   emailVerified  DateTime?
-  image          String?
   hashedPassword String?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  favoriteIds    String[]      @db.ObjectId
-  accounts       Account[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  // array di preferiti: Postgres supporta gli array nativamente
+  favoriteIds    String[]
+
+  // relazioni
   listings       Listing[]
   reservations   Reservation[]
+  accounts       Account[]
 }
 
+// NextAuth Account (Postgres)
 model Account {
-  id                String  @id @default(auto()) @map("_id") @db.ObjectId
-  userId            String  @db.ObjectId
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String? @db.String
-  access_token      String? @db.String
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String? @db.String
-  session_state     String?
-  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                 String  @id @default(uuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?
+  access_token       String?
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
 
+// (Se usi NextAuth con Sessioni, decommenta e usa il relativo adapter)
+// model Session {
+//   id           String   @id @default(uuid())
+//   sessionToken String   @unique
+//   userId       String
+//   expires      DateTime
+//   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+// }
+
+// Annuncio/Lezione (ex Listing)
 model Listing {
-  id            String        @id @default(auto()) @map("_id") @db.ObjectId
-  title         String
-  description   String
-  imageSrc      String
-  createdAt     DateTime      @default(now())
-  category      String
-  roomCount     Int
-  bathroomCount Int
-  guestCount    Int
-  locationValue String
-  userId        String        @db.ObjectId
-  price         Int
-  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  reservations  Reservation[]
+  id             String        @id @default(uuid())
+  title          String
+  description    String
+  imageSrc       String
+  createdAt      DateTime      @default(now())
+  category       String
+
+  // campi numerici "airbnb-like", li useremo/riutilizzeremo
+  roomCount      Int
+  bathroomCount  Int
+  guestCount     Int
+
+  // località (es. "TR-İzmir" o comprensorio sciistico)
+  locationValue  String
+
+  price          Int
+
+  // relazione con User (maestro/host)
+  userId   String
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  reservations Reservation[]
 }
 
+// Prenotazione
 model Reservation {
-  id         String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId     String   @db.ObjectId
-  listingId  String   @db.ObjectId
-  startDate  DateTime
-  endDate    DateTime
-  totalPrice Int
-  createdAt  DateTime @default(now())
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  listing    Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  id          String   @id @default(uuid())
+  userId      String
+  listingId   String
+
+  startDate   DateTime
+  endDate     DateTime
+  totalPrice  Int
+  createdAt   DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
 }
